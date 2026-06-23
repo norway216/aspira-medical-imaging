@@ -1,0 +1,42 @@
+# Claude Code
+.claude/
+
+# C/C++ — Object files
+*.o
+*.obj
+*.lo
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# C/C++ — Compiled executables
+*.exe
+*.out
+*.app
+
+# C/C++ — Precompiled headers
+*.gch
+*.pch
+
+# C/C++ — Dependency files
+*.d
+*.depend
+*.deps
+
+# C/C++ — Build directories
+build/
+cmake-build-*/
+obj/
+Debug/
+Release/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
