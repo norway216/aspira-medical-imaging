@@ -47,7 +47,7 @@ void InferenceScheduler::process_one(const InferenceRequest& req,
 
     /* Postprocess */
     aspira_segmentation_result result;
-    aspira_postprocess_run(model_->output_tensor, req.threshold,
+    aspira_postprocess_run(aspira_unet_output(model_), req.threshold,
                             req.morph_kernel, &result);
 
     auto end = std::chrono::steady_clock::now();
