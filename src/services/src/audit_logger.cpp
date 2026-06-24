@@ -16,7 +16,9 @@ static const char* action_names[] = {
     "STUDY_CREATED", "STUDY_MODIFIED", "STUDY_DELETED",
     "PATIENT_VIEWED", "PATIENT_MODIFIED", "CONFIG_CHANGED",
     "SYSTEM_STARTUP", "SYSTEM_SHUTDOWN", "SECURITY_VIOLATION",
-    "PIPELINE_FAULT"
+    "PIPELINE_FAULT",
+    "AI_SEGMENTATION_STARTED", "AI_SEGMENTATION_COMPLETED",
+    "AI_SEGMENTATION_FAILED"
 };
 
 std::string AuditLogger::action_to_string(AuditAction action) {

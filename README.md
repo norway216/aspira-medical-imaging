@@ -332,6 +332,3 @@ $ cd build && ctest --output-on-failure
 
 This project is for educational and research purposes. See the architecture documentation in `docs/` for detailed design rationale.
 
----
-
-🤖 Built with [Claude Code](https://claude.com/claude-code)

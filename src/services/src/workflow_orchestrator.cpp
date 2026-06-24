@@ -14,6 +14,7 @@ const char* WorkflowOrchestrator::state_name() const {
     case WorkflowState::PREPARING:  return "PREPARING";
     case WorkflowState::SCANNING:   return "SCANNING";
     case WorkflowState::PAUSED:     return "PAUSED";
+    case WorkflowState::ANALYZING:  return "ANALYZING";
     case WorkflowState::REVIEWING:  return "REVIEWING";
     case WorkflowState::SAVING:     return "SAVING";
     case WorkflowState::ERROR:      return "ERROR";
@@ -28,8 +29,10 @@ const char* WorkflowOrchestrator::event_name(WorkflowEvent event) const {
     case WorkflowEvent::PAUSE_SCAN:       return "PAUSE_SCAN";
     case WorkflowEvent::RESUME_SCAN:      return "RESUME_SCAN";
     case WorkflowEvent::STOP_SCAN:        return "STOP_SCAN";
-    case WorkflowEvent::FRAME_CAPTURED:   return "FRAME_CAPTURED";
-    case WorkflowEvent::REVIEW_COMPLETE:  return "REVIEW_COMPLETE";
+    case WorkflowEvent::FRAME_CAPTURED:       return "FRAME_CAPTURED";
+    case WorkflowEvent::START_AI_ANALYSIS:    return "START_AI_ANALYSIS";
+    case WorkflowEvent::AI_ANALYSIS_COMPLETE: return "AI_ANALYSIS_COMPLETE";
+    case WorkflowEvent::REVIEW_COMPLETE:      return "REVIEW_COMPLETE";
     case WorkflowEvent::SAVE_COMPLETE:    return "SAVE_COMPLETE";
     case WorkflowEvent::FAULT_DETECTED:   return "FAULT_DETECTED";
     case WorkflowEvent::RECOVER:          return "RECOVER";
@@ -46,7 +49,9 @@ WorkflowOrchestrator::kTransitions[] = {
     {WorkflowState::PREPARING, WorkflowEvent::FRAME_CAPTURED,  WorkflowState::SCANNING},
     {WorkflowState::SCANNING,  WorkflowEvent::PAUSE_SCAN,      WorkflowState::PAUSED},
     {WorkflowState::PAUSED,    WorkflowEvent::RESUME_SCAN,     WorkflowState::SCANNING},
-    {WorkflowState::SCANNING,  WorkflowEvent::STOP_SCAN,       WorkflowState::REVIEWING},
+    {WorkflowState::SCANNING,  WorkflowEvent::STOP_SCAN,       WorkflowState::ANALYZING},
+    {WorkflowState::SCANNING,  WorkflowEvent::START_AI_ANALYSIS, WorkflowState::ANALYZING},
+    {WorkflowState::ANALYZING, WorkflowEvent::AI_ANALYSIS_COMPLETE, WorkflowState::REVIEWING},
     {WorkflowState::REVIEWING, WorkflowEvent::REVIEW_COMPLETE, WorkflowState::SAVING},
     {WorkflowState::SAVING,    WorkflowEvent::SAVE_COMPLETE,   WorkflowState::READY},
 
@@ -56,6 +61,7 @@ WorkflowOrchestrator::kTransitions[] = {
     {WorkflowState::PREPARING, WorkflowEvent::FAULT_DETECTED,  WorkflowState::ERROR},
     {WorkflowState::SCANNING,  WorkflowEvent::FAULT_DETECTED,  WorkflowState::ERROR},
     {WorkflowState::PAUSED,    WorkflowEvent::FAULT_DETECTED,  WorkflowState::ERROR},
+    {WorkflowState::ANALYZING, WorkflowEvent::FAULT_DETECTED,  WorkflowState::ERROR},
     {WorkflowState::REVIEWING, WorkflowEvent::FAULT_DETECTED,  WorkflowState::ERROR},
     {WorkflowState::ERROR,     WorkflowEvent::RECOVER,         WorkflowState::IDLE},
 };

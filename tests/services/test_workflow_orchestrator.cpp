@@ -20,7 +20,8 @@ TEST_CASE("Workflow orchestrator state transitions", "[services][workflow]") {
         REQUIRE(wf.handle_event(WorkflowEvent::SYSTEM_READY) == WorkflowState::READY);
         REQUIRE(wf.handle_event(WorkflowEvent::START_SCAN) == WorkflowState::PREPARING);
         REQUIRE(wf.handle_event(WorkflowEvent::FRAME_CAPTURED) == WorkflowState::SCANNING);
-        REQUIRE(wf.handle_event(WorkflowEvent::STOP_SCAN) == WorkflowState::REVIEWING);
+        REQUIRE(wf.handle_event(WorkflowEvent::STOP_SCAN) == WorkflowState::ANALYZING);
+        REQUIRE(wf.handle_event(WorkflowEvent::AI_ANALYSIS_COMPLETE) == WorkflowState::REVIEWING);
         REQUIRE(wf.handle_event(WorkflowEvent::REVIEW_COMPLETE) == WorkflowState::SAVING);
         REQUIRE(wf.handle_event(WorkflowEvent::SAVE_COMPLETE) == WorkflowState::READY);
     }

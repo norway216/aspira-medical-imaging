@@ -41,8 +41,9 @@ typedef void (*aspira_task_fn)(void* arg);
 typedef enum {
     ASPIRA_PRIORITY_ACQUISITION = 0,  /* Highest - real-time data capture */
     ASPIRA_PRIORITY_PROCESSING  = 1,  /* Normal - signal processing */
-    ASPIRA_PRIORITY_RENDERING   = 2,  /* Lowest - display updates */
-    ASPIRA_PRIORITY_COUNT       = 3
+    ASPIRA_PRIORITY_RENDERING   = 2,  /* Low - display updates */
+    ASPIRA_PRIORITY_INFERENCE   = 3,  /* Background - AI inference */
+    ASPIRA_PRIORITY_COUNT       = 4
 } aspira_priority_t;
 
 /**

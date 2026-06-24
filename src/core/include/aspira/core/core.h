@@ -18,7 +18,7 @@
  * ========================================================================== */
 #define ASPIRA_CACHE_LINE_SIZE 64
 #define ASPIRA_MAX_THREADS      128
-#define ASPIRA_MAX_PRIORITIES   3
+#define ASPIRA_MAX_PRIORITIES   4
 #define ASPIRA_MAX_FILTERS      16
 #define ASPIRA_MAX_WATCHDOGS    8
 
@@ -26,6 +26,9 @@
  * frame.h is always included (no atomics, safe for C++ too)
  * ========================================================================== */
 #include "frame.h"
+#include "tensor.h"
+#include "preprocess.h"
+#include "postprocess.h"
 
 /* ==========================================================================
  * C mode: include full struct definitions from C11-atomics sub-headers
@@ -38,6 +41,7 @@
 #include "signal_pipeline.h"
 #include "watchdog.h"
 #include "ipc.h"
+#include "unet.h"
 #endif
 
 /* ==========================================================================
@@ -80,7 +84,10 @@ typedef struct aspira_watchdog            aspira_watchdog;
 typedef struct aspira_watchdog_manager    aspira_watchdog_manager;
 typedef struct aspira_ipc_shm_header      aspira_ipc_shm_header;
 typedef struct aspira_ipc_channel         aspira_ipc_channel;
-
+typedef struct aspira_unet_model          aspira_unet_model;
+typedef struct aspira_unet_layer          aspira_unet_layer;
+typedef struct aspira_conv2d_params       aspira_conv2d_params;
+typedef struct aspira_unet_config         aspira_unet_config;
 /* C++ only: enum definitions (C gets them from sub-headers)
    Frame enums are defined in frame.h which is always included.
    Other enums needed by the API: */
@@ -88,7 +95,8 @@ typedef enum {
     ASPIRA_PRIORITY_ACQUISITION = 0,
     ASPIRA_PRIORITY_PROCESSING  = 1,
     ASPIRA_PRIORITY_RENDERING   = 2,
-    ASPIRA_PRIORITY_COUNT       = 3
+    ASPIRA_PRIORITY_INFERENCE   = 3,
+    ASPIRA_PRIORITY_COUNT       = 4
 } aspira_priority_t;
 
 typedef enum {
@@ -118,6 +126,15 @@ typedef enum {
     ASPIRA_IPC_MSG_ERROR       = 6,
 } aspira_ipc_msg_type_t;
 
+typedef enum {
+    ASPIRA_UNET_CONV2D = 0,
+    ASPIRA_UNET_RELU,
+    ASPIRA_UNET_MAXPOOL2D,
+    ASPIRA_UNET_UPSAMPLE,
+    ASPIRA_UNET_CONCAT,
+    ASPIRA_UNET_SIGMOID,
+} aspira_unet_layer_type_t;
+
 /* C++ only: callback typedefs */
 typedef void (*aspira_task_fn)(void* arg);
 
@@ -135,6 +152,73 @@ typedef void (*aspira_watchdog_callback_fn)(const char* source_name,
 void aspira_frame_init(aspira_frame* frame, uint32_t width, uint32_t height,
                        uint32_t channels, float* data, size_t data_size);
 void aspira_frame_reset(aspira_frame* frame);
+
+/* --- Tensor --- */
+void aspira_tensor_init(aspira_tensor* t, uint32_t n, uint32_t c,
+                        uint32_t h, uint32_t w, float* data, bool owns);
+void aspira_tensor_destroy(aspira_tensor* t);
+aspira_tensor* aspira_tensor_create(uint32_t n, uint32_t c,
+                                     uint32_t h, uint32_t w);
+void aspira_tensor_free(aspira_tensor* t);
+void aspira_tensor_fill(aspira_tensor* t, float value);
+void aspira_tensor_copy(const aspira_tensor* src, aspira_tensor* dst);
+bool aspira_tensor_same_shape(const aspira_tensor* a, const aspira_tensor* b);
+void aspira_tensor_view(const aspira_tensor* src,
+                         uint32_t c_start, uint32_t c_end,
+                         uint32_t h_start, uint32_t h_end,
+                         uint32_t w_start, uint32_t w_end,
+                         aspira_tensor* view);
+
+/* --- Preprocess --- */
+void aspira_preprocess_roi_crop(const aspira_frame* frame,
+                                 uint32_t roi_x, uint32_t roi_y,
+                                 uint32_t roi_w, uint32_t roi_h,
+                                 aspira_tensor* dst);
+void aspira_preprocess_resize(const aspira_tensor* src,
+                               uint32_t target_w, uint32_t target_h,
+                               aspira_tensor* dst);
+void aspira_preprocess_normalize(aspira_tensor* tensor, float mean, float std);
+bool aspira_preprocess_run(const aspira_frame* frame,
+                            uint32_t roi_x, uint32_t roi_y,
+                            uint32_t roi_w, uint32_t roi_h,
+                            uint32_t target_w, uint32_t target_h,
+                            float mean, float std,
+                            aspira_tensor* output);
+
+/* --- Postprocess --- */
+void aspira_segmentation_result_init(aspira_segmentation_result* result);
+void aspira_segmentation_result_destroy(aspira_segmentation_result* result);
+void aspira_postprocess_threshold(const aspira_tensor* src,
+                                   float threshold, aspira_tensor* dst);
+void aspira_postprocess_erode(aspira_tensor* mask, uint32_t kernel_size);
+void aspira_postprocess_dilate(aspira_tensor* mask, uint32_t kernel_size);
+float aspira_postprocess_confidence(const aspira_tensor* prob_map);
+bool aspira_postprocess_run(const aspira_tensor* raw_output,
+                             float threshold, uint32_t morph_kernel,
+                             aspira_segmentation_result* result);
+
+/* --- U-Net Model --- */
+aspira_unet_model* aspira_unet_create(const aspira_unet_config* config);
+void aspira_unet_free(aspira_unet_model* model);
+size_t aspira_unet_param_count(const aspira_unet_model* model);
+size_t aspira_unet_pool_usage(const aspira_unet_model* model);
+bool aspira_unet_load_weights(aspira_unet_model* model, const char* path);
+bool aspira_unet_forward(aspira_unet_model* model, const aspira_tensor* input);
+
+/* Standalone layer functions */
+void aspira_unet_conv2d(const aspira_tensor* input,
+                         const aspira_conv2d_params* params,
+                         aspira_tensor* output);
+void aspira_unet_relu(aspira_tensor* tensor);
+void aspira_unet_maxpool2d(const aspira_tensor* input,
+                            uint32_t pool_size, uint32_t stride,
+                            aspira_tensor* output);
+void aspira_unet_upsample(const aspira_tensor* input,
+                           uint32_t scale_factor,
+                           aspira_tensor* output);
+void aspira_unet_concat(const aspira_tensor* src1, const aspira_tensor* src2,
+                         aspira_tensor* output);
+void aspira_unet_sigmoid(aspira_tensor* tensor);
 
 /* --- SPSC Ring Buffer --- */
 aspira_spsc_rb* aspira_spsc_create(uint64_t capacity, size_t element_size);
