@@ -37,6 +37,7 @@ enum class Permission {
     VIEW_LOGS,
     MANAGE_USERS,
     EXPORT_DATA,
+    RUN_AI_SEGMENTATION,
 
     /* Count */
     PERMISSION_COUNT

@@ -18,6 +18,7 @@ SecurityManager::init_role_permissions() {
         Permission::START_SCAN,
         Permission::STOP_SCAN,
         Permission::VIEW_PATIENT,
+        Permission::RUN_AI_SEGMENTATION,
     };
 
     /* Doctor */

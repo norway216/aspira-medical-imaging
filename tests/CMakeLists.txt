@@ -4,6 +4,10 @@ add_executable(aspira_tests
     core/test_memory_pool.cpp
     core/test_thread_pool.cpp
     core/test_signal_pipeline.cpp
+    core/test_tensor.cpp
+    core/test_preprocess.cpp
+    core/test_postprocess.cpp
+    core/test_unet.cpp
     services/test_security_manager.cpp
     services/test_workflow_orchestrator.cpp
     integration/test_full_pipeline.cpp

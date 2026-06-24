@@ -32,6 +32,7 @@ enum class WorkflowState {
     PREPARING,
     SCANNING,
     PAUSED,
+    ANALYZING,    /* AI segmentation analysis phase */
     REVIEWING,
     SAVING,
     ERROR
@@ -44,6 +45,8 @@ enum class WorkflowEvent {
     RESUME_SCAN,
     STOP_SCAN,
     FRAME_CAPTURED,
+    START_AI_ANALYSIS,    /* Begin AI segmentation */
+    AI_ANALYSIS_COMPLETE, /* AI segmentation finished */
     REVIEW_COMPLETE,
     SAVE_COMPLETE,
     FAULT_DETECTED,
