@@ -37,6 +37,14 @@ else()
     message(STATUS "libnuma not found - NUMA-aware allocation disabled")
 endif()
 
+# OpenCV for visualization (optional)
+find_package(OpenCV QUIET)
+if(OpenCV_FOUND)
+    message(STATUS "Found OpenCV ${OpenCV_VERSION}")
+else()
+    message(STATUS "OpenCV not found - visualization disabled")
+endif()
+
 # Catch2 for testing
 if(ASPIRA_BUILD_TESTS)
     find_package(Catch2 3 REQUIRED)

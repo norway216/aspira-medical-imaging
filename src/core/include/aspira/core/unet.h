@@ -181,6 +181,11 @@ bool aspira_unet_load_weights(aspira_unet_model* model, const char* path);
  * ========================================================================== */
 
 /**
+ * @brief Get the output tensor from the last forward pass (read-only)
+ */
+const aspira_tensor* aspira_unet_output(const aspira_unet_model* model);
+
+/**
  * @brief Run U-Net forward inference
  *
  * Zero heap allocations. All intermediate tensors are pre-allocated.

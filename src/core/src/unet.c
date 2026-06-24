@@ -607,6 +607,10 @@ static bool alloc_layer_tensors(aspira_unet_layer* head,
     return true;
 }
 
+const aspira_tensor* aspira_unet_output(const aspira_unet_model* m) {
+    return m ? m->output_tensor : NULL;
+}
+
 bool aspira_unet_forward(aspira_unet_model* m, const aspira_tensor* input) {
     if (!m || !input) return false;
 

@@ -159,32 +159,55 @@ void SimulatedUI::print_frame_ascii(const aspira_frame* frame,
 
     /* Downsample for display */
     int dw = (w > (uint32_t)max_width) ? max_width : (int)w;
-    int dh = (dw * (int)h / (int)w) / 2;  /* Aspect correction */
+    int dh = (dw * (int)h / (int)w) / 2;
     if (dh > 30) dh = 30;
+    if (dw < 1) dw = 1;
+    if (dh < 1) dh = 1;
 
-    const char* gradient = " .:-=+*#%@";
+    /* Find data range for auto-normalization */
+    size_t total = (size_t)w * h;
+    float fmin = frame->data[0], fmax = frame->data[0];
+    for (size_t i = 1; i < total; i++) {
+        float v = frame->data[i];
+        if (v < fmin) fmin = v;
+        if (v > fmax) fmax = v;
+    }
+    float range = fmax - fmin;
+    if (range < 1e-10f) range = 1.0f;
 
-    std::cout << "\n  Frame #" << frame->frame_id << " ("
-              << w << "x" << h << ")\n";
+    /* Unicode block characters for 2x vertical resolution:
+       ' ' = both dark, '▀' = top bright, '▄' = bottom bright, '█' = both bright */
+    const char* blocks[] = {" ", "▄", "▀", "█"};
+
+    std::cout << "\n  ┌─ Frame #" << frame->frame_id
+              << " (" << w << "x" << h << ") "
+              << "range: [" << fmin << ", " << fmax << "] ─┐\n";
 
     for (int y = 0; y < dh; y++) {
-        std::cout << "  ";
+        std::cout << "  │";
         for (int x = 0; x < dw; x++) {
-            int sx = x * w / dw;
-            int sy = y * h / dh;
-            float val = frame->data[sy * w + sx];
+            int sx = x * (int)w / dw;
+            int sy_top = y * 2 * (int)h / (dh * 2);
+            int sy_bot = (y * 2 + 1) * (int)h / (dh * 2);
 
-            /* Normalize to [0, 1] */
-            float absval = fabsf(val);
-            int idx = (int)(absval * 9.0f);
-            if (idx < 0) idx = 0;
-            if (idx > 9) idx = 9;
+            if (sy_bot >= (int)h) sy_bot = (int)h - 1;
 
-            std::cout << gradient[idx];
+            float v_top = (frame->data[sy_top * w + sx] - fmin) / range;
+            float v_bot = (frame->data[sy_bot * w + sx] - fmin) / range;
+
+            int top_bright = (v_top > 0.45f) ? 1 : 0;
+            int bot_bright = (v_bot > 0.45f) ? 1 : 0;
+            int idx = top_bright * 2 + bot_bright;
+
+            std::cout << blocks[idx];
         }
-        std::cout << "\n";
+        std::cout << "│\n";
     }
-    std::cout << "  Gradient: dark " << gradient << " bright\n";
+    std::cout << "  └";
+    for (int x = 0; x < dw; x++) std::cout << "─";
+    std::cout << "┘\n";
+    std::cout << "  Bright: █  Dark:    (Unicode blocks, double resolution)\n";
+    std::cout << "  Press 'e' to export as PGM, 'm' for PPM\n";
 }
 
 } // namespace aspira

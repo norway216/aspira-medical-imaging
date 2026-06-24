@@ -29,6 +29,7 @@
 #include "tensor.h"
 #include "preprocess.h"
 #include "postprocess.h"
+#include "image_export.h"
 
 /* ==========================================================================
  * C mode: include full struct definitions from C11-atomics sub-headers
@@ -197,12 +198,19 @@ bool aspira_postprocess_run(const aspira_tensor* raw_output,
                              float threshold, uint32_t morph_kernel,
                              aspira_segmentation_result* result);
 
+/* --- Image Export --- */
+bool aspira_export_frame_pgm(const aspira_frame* frame, const char* path, bool normalize);
+bool aspira_export_tensor_pgm(const aspira_tensor* tensor, const char* path, bool normalize);
+bool aspira_export_mask_pgm(const float* mask, uint32_t w, uint32_t h, const char* path);
+bool aspira_export_frame_ppm(const aspira_frame* frame, const char* path, bool normalize);
+
 /* --- U-Net Model --- */
 aspira_unet_model* aspira_unet_create(const aspira_unet_config* config);
 void aspira_unet_free(aspira_unet_model* model);
 size_t aspira_unet_param_count(const aspira_unet_model* model);
 size_t aspira_unet_pool_usage(const aspira_unet_model* model);
 bool aspira_unet_load_weights(aspira_unet_model* model, const char* path);
+const aspira_tensor* aspira_unet_output(const aspira_unet_model* model);
 bool aspira_unet_forward(aspira_unet_model* model, const aspira_tensor* input);
 
 /* Standalone layer functions */
