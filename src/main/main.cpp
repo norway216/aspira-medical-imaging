@@ -340,37 +340,37 @@ int main() {
 
             ui.update(stats);
             last_ui_update = now;
+        }
 
 #ifdef ASPIRA_HAS_OPENCV
-            {
-                const aspira_frame* f = display_buffer.read();
-                if (f && f->data) {
-                    std::ostringstream ss;
-                    ss << std::fixed << std::setprecision(1)
-                       << "FPS: A=" << stats.acquisition_fps
-                       << " P=" << stats.processing_fps
-                       << " D=" << stats.display_fps
-                       << " | Lat: " << (int)stats.avg_frame_latency_us << "us"
-                       << " | Queue: " << aspira_spsc_count(acq_queue.native())
-                       << " | Drop: " << stats.frames_dropped
-                       << " | " << (stats.pipeline_healthy ? "HEALTHY" : "FAULT");
-                    viz.set_status(ss.str());
-                    viz.show(f, "");
-                }
-                int key = viz.wait_key(1);
-                if (key == 'q' || key == 'Q' || key == 27) g_running = false;
-                if (key == 's' || key == 'S') {
-                    const aspira_frame* f2 = display_buffer.read();
-                    if (f2 && f2->data) {
-                        char path[64];
-                        snprintf(path, sizeof(path), "/tmp/aspira_frame_%05lu.pgm",
-                                 (unsigned long)f2->frame_id);
-                        aspira_export_frame_pgm(f2, path, true);
-                    }
+        /* --- OpenCV Visualizer Update (every frame, unthrottled) --- */
+        {
+            const aspira_frame* f = display_buffer.read();
+            if (f && f->data) {
+                std::ostringstream ss;
+                ss << std::fixed << std::setprecision(1)
+                   << "FPS: A=" << fps_acq.get()
+                   << " P=" << fps_proc.get()
+                   << " D=" << fps_disp.get()
+                   << " | Lat: " << (int)stats.avg_frame_latency_us << "us"
+                   << " | Frame: " << f->frame_id
+                   << " | " << (stats.pipeline_healthy ? "HEALTHY" : "FAULT");
+                viz.set_status(ss.str());
+                viz.show(f, "Aspira Imaging Pipeline");
+            }
+            int key = viz.wait_key(1);
+            if (key == 'q' || key == 'Q' || key == 27) g_running = false;
+            if (key == 's' || key == 'S') {
+                const aspira_frame* f2 = display_buffer.read();
+                if (f2 && f2->data) {
+                    char path[64];
+                    snprintf(path, sizeof(path), "/tmp/aspira_frame_%05lu.pgm",
+                             (unsigned long)f2->frame_id);
+                    aspira_export_frame_pgm(f2, path, true);
                 }
             }
-#endif
         }
+#endif
 
         /* --- Update target positions (every 100ms) --- */
         auto since_target = std::chrono::duration_cast<std::chrono::milliseconds>(

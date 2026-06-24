@@ -49,10 +49,19 @@ static cv::Mat frame_to_mat(const aspira_frame* frame, int disp_w, int disp_h) {
         }
     }
 
-    /* Resize if display size specified */
-    if (disp_w > 0 && disp_h > 0 && (disp_w != fw || disp_h != fh)) {
+    /* Resize if display size specified — maintain aspect ratio */
+    if (disp_w > 0 && disp_h > 0) {
+        /* Fit inside display area while keeping aspect ratio */
+        double scale_w = (double)disp_w / (double)fw;
+        double scale_h = (double)disp_h / (double)fh;
+        double scale = (scale_w < scale_h) ? scale_w : scale_h;
+        int new_w = (int)(fw * scale);
+        int new_h = (int)(fh * scale);
+        if (new_w < 4) new_w = 4;
+        if (new_h < 4) new_h = 4;
+
         cv::Mat resized;
-        cv::resize(gray, resized, cv::Size(disp_w, disp_h),
+        cv::resize(gray, resized, cv::Size(new_w, new_h),
                     0, 0, cv::INTER_LINEAR);
         return resized;
     }
@@ -91,6 +100,17 @@ void Visualizer::show(const aspira_frame* frame, const std::string& title) {
     /* Apply color map for better contrast (ultrasound-like) */
     cv::Mat color;
     cv::applyColorMap(img, color, cv::COLORMAP_BONE);
+
+    /* Pad image to fill display area (center the ultrasound scan) */
+    if (display_w_ > 0 && display_h_ > 0) {
+        int pad_left = (display_w_ - color.cols) / 2;
+        int pad_top  = 0;
+        if (pad_left < 0) pad_left = 0;
+        cv::Mat padded;
+        cv::copyMakeBorder(color, padded, pad_top, 0, pad_left, pad_left,
+                           cv::BORDER_CONSTANT, cv::Scalar(10, 10, 15));
+        color = padded;
+    }
 
     /* Draw status bar at bottom */
     if (!status_text_.empty()) {
