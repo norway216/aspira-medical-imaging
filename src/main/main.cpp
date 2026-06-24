@@ -117,9 +117,6 @@ static void processing_thread_fn(
 }
 
 int main() {
-    /* Suppress Qt warnings from OpenCV highgui */
-    setenv("QT_QPA_PLATFORM", "offscreen", 0);
-
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
